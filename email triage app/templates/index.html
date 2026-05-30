@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Triage AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 700px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+        }
+        textarea:focus { border-color: rgba(99,179,237,0.5); }
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result {
+            margin-top: 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 24px;
+            display: none;
+        }
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .urgent { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .normal { background: rgba(234,179,8,0.2); color: #facc15; border: 1px solid rgba(234,179,8,0.3); }
+        .low { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+        .work { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+        .personal { background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+        .newsletter { background: rgba(249,115,22,0.2); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+        .spam { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .summary {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .reason {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .action-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: capitalize;
+            width: auto;
+            margin-top: 0;
+        }
+        .loading {
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            margin-top: 16px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Email Triage AI</h1>
+        <p class="subtitle">Paste any email and AI will tell you exactly what to do with it</p>
+
+        <textarea id="email" placeholder="Paste your email here...
+
+From: someone@example.com
+Subject: Something important
+
+Email body..."></textarea>
+
+        <button onclick="analyze()" id="btn">Analyze Email</button>
+        <div class="loading" id="loading">⏳ Analyzing your email...</div>
+
+        <div class="result" id="result">
+            <div class="badges">
+                <span class="badge" id="priority-badge"></span>
+                <span class="badge" id="category-badge"></span>
+            </div>
+            <div class="summary" id="summary"></div>
+            <div class="reason" id="reason"></div>
+            <button class="action-btn" id="action-btn"></button>
+        </div>
+    </div>
+
+    <script>
+        async function analyze() {
+            const email = document.getElementById("email").value.trim()
+            if (!email) { alert("Please paste an email!"); return; }
+
+            const btn = document.getElementById("btn")
+            const loading = document.getElementById("loading")
+            const result = document.getElementById("result")
+
+            btn.disabled = true
+            loading.style.display = "block"
+            result.style.display = "none"
+
+            const response = await fetch("/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email })
+            })
+
+            const data = await response.json()
+
+            loading.style.display = "none"
+            btn.disabled = false
+
+            document.getElementById("priority-badge").textContent = data.priority
+            document.getElementById("priority-badge").className = `badge ${data.priority}`
+            document.getElementById("category-badge").textContent = data.category
+            document.getElementById("category-badge").className = `badge ${data.category}`
+            document.getElementById("summary").textContent = data.summary
+            document.getElementById("reason").textContent = data.reason
+            document.getElementById("action-btn").textContent = `Suggested Action: ${data.action}`
+
+            result.style.display = "block"
+        }
+    </script>
+</body>
+</html>

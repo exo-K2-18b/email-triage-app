@@ -1,0 +1,1 @@
+web: gunicorn groq2:app
