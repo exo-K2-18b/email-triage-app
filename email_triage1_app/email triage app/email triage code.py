@@ -11,10 +11,10 @@ load_dotenv()
 # start Flask
 app = Flask(__name__)
 
-# connect to Groq - YOUR code, you know this!
+# connect to Groq 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# YOUR AI function - you already wrote this!
+
 def analyze_email(email_text):
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
